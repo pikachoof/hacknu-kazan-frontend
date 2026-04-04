@@ -107,6 +107,7 @@ export const createInitialStorage = (roomId: string) => ({
   notes: new LiveList(
     createStarterNotes(roomId).map((note) => new LiveObject(note)),
   ),
+  tldrawDoc: "",
 });
 
 export const createBlankNote = (

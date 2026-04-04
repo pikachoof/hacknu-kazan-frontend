@@ -1,14 +1,9 @@
-import AuthPage from "./pages/login";
-import Whiteboard from "./pages/whiteboard";
-import { NotFound } from "./pages/notfound";
-// import { AuthGuard } from "./components/AuthGuard";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
-import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/login";
 import WhiteboardPage from "./pages/whiteboard";
 
-export function App() {
+export default function App() {
   return (
     <BrowserRouter>
       <Routes>
