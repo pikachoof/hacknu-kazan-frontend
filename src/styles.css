@@ -185,10 +185,17 @@ code {
 
 .control-panel,
 .session-panel,
-.inspector-panel {
+.inspector-panel,
+.message-panel {
   display: flex;
   flex-direction: column;
   gap: 18px;
+}
+
+.message-panel {
+  grid-column: 1 / -1;
+  min-height: auto;
+  flex: 1;
 }
 
 .board-wrap {
@@ -468,6 +475,11 @@ code {
   gap: 14px;
 }
 
+.message-panel .message-feed {
+  flex: 1;
+  min-height: 0;
+}
+
 .message-feed-header {
   display: flex;
   justify-content: space-between;
@@ -491,6 +503,11 @@ code {
   max-height: 340px;
   overflow: auto;
   padding-right: 4px;
+}
+
+.message-panel .message-stack {
+  max-height: none;
+  flex: 1;
 }
 
 .message-card {
