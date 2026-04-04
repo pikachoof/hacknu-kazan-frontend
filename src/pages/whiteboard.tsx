@@ -13,6 +13,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 
 import { BrainstormBoard } from "../components/BrainstormBoard";
 import { InspectorPanel } from "../components/InspectorPanel";
+import { MessagePanel } from "../components/MessagePanel";
 import { SessionPanel } from "../components/SessionPanel";
 import {
   buildBoardSnapshot,
@@ -77,7 +78,6 @@ function RoomShell() {
           </main>
         }
       >
-        <div>text</div>
         <Workspace roomId={roomId} onRoomIdChange={setRoomId} />
       </Suspense>
     </RoomProvider>
@@ -450,8 +450,7 @@ function Workspace({
         </div>
 
         <div className="sidebar-stack">
-          <InspectorPanel note={selectedNote} onChange={updateNote} />
-          <SessionPanel
+          <MessagePanel
             messages={feed}
             othersCount={peerCount}
             connectionStatus={connectionStatus}
