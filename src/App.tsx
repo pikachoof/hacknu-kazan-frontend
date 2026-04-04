@@ -1,20 +1,21 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
 import AuthPage from "./pages/login";
-import { Whiteboard } from "./pages/whiteboard";
+import Whiteboard from "./pages/whiteboard";
 import { NotFound } from "./pages/notfound";
+// import { AuthGuard } from "./components/AuthGuard";
 
-function App() {
+import React from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import Login from "./pages/login";
+import WhiteboardPage from "./pages/whiteboard";
+
+export function App() {
   return (
-    <>
-      <BrowserRouter>
-        <Routes>
-          <Route index element={<AuthPage />} />
-          <Route path="/whiteboard" element={<Whiteboard />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Navigate to="/whiteboard" replace />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/whiteboard" element={<WhiteboardPage />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
-
-export default App;

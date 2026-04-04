@@ -22,7 +22,8 @@
     "react": "*",
     "react-dom": "*",
     "react-konva": "*",
-    "react-router-dom": "^7.14.0"
+    "react-router-dom": "*",
+    "router-dom": "^3.0.3"
   },
   "devDependencies": {
     "@types/cors": "*",
