@@ -77,6 +77,7 @@ function RoomShell() {
           </main>
         }
       >
+        <div>text</div>
         <Workspace roomId={roomId} onRoomIdChange={setRoomId} />
       </Suspense>
     </RoomProvider>
@@ -117,7 +118,7 @@ function Workspace({
   );
 
   const notes = useMemo(
-    () => (notesLive ? notesLive.map((note) => note.toObject()) : []),
+    () => (notesLive ? notesLive.map((note) => note) : []),
     [notesLive],
   );
   const selectedNote = notes.find((note) => note.id === selectedNoteId) ?? null;
