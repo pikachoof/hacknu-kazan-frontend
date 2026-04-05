@@ -125,6 +125,12 @@ export function TldrawBoard({
             height: "100%",
             overflow: "hidden",
           }}
+          onMouseDown={(event) => {
+            // Prevent browser autoscroll mode when middle-clicking inside the board
+            if (event.button === 1) {
+              event.preventDefault();
+            }
+          }}
           onPointerMove={(event) => {
             onPointerMove?.({
               x: Math.round(event.clientX),
