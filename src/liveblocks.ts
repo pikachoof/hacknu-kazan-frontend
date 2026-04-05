@@ -1,6 +1,6 @@
 import { LiveList, LiveObject } from "@liveblocks/client";
 
-import type { BoardSnapshot, Note, NoteColor, Presence } from "./types";
+import type { BoardShape, BoardSnapshot, Note, NoteColor, Presence } from "./types";
 
 export const notePalette: Record<
   NoteColor,
@@ -129,6 +129,7 @@ export const createBlankNote = (
 
 export const buildBoardSnapshot = (
   notes: Note[],
+  shapes: BoardShape[],
   prompt: string,
   roomId: string,
   mode: Presence["mode"],
@@ -160,6 +161,7 @@ export const buildBoardSnapshot = (
       pinned,
     }),
   ),
+  shapes,
   prompt,
   roomId,
   mode,

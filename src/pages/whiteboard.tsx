@@ -10,6 +10,7 @@ import {
   useStorage,
 } from "@liveblocks/react/suspense";
 import { useEffect, useMemo, useState } from "react";
+import { toRichText } from "@tldraw/editor";
 
 import { agentRequest } from "../api/agent-request";
 import { InspectorPanel } from "../components/InspectorPanel";
@@ -21,7 +22,7 @@ import {
   createInitialPresence,
   createInitialStorage,
 } from "../liveblocks";
-import type { AgentAction, ChatMessage, Note, Presence } from "../types";
+import type { AgentAction, BoardShape, ChatMessage, Note, Presence } from "../types";
 
 const defaultRoomId = import.meta.env.VITE_ROOM_ID ?? "hacknu-demo";
 const publicApiKey = import.meta.env.VITE_LIVEBLOCKS_PUBLIC_KEY;
@@ -100,6 +101,7 @@ function WhiteboardWorkspace({
   const notes = (useStorage((root) => root.notes) ?? []) as Note[];
   const others = useOthers();
   const status = useStatus();
+  const [editor, setEditor] = useState<any>(null);
 
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -265,19 +267,102 @@ function WhiteboardWorkspace({
     setPending(true);
 
     try {
-      const board = buildBoardSnapshot(notes, prompt, roomId, myPresence.mode);
+      // Collect current shapes from the tldraw canvas
+      const boardShapes: BoardShape[] = editor
+        ? editor.getCurrentPageShapes().map((s: any) => ({
+            id: s.id,
+            type: s.type,
+            x: Math.round(s.x),
+            y: Math.round(s.y),
+            text: s.props?.text ?? "",
+            color: s.props?.color ?? "",
+          }))
+        : [];
+
+      const board = buildBoardSnapshot(notes, boardShapes, prompt, roomId, myPresence.mode);
       const reply = await agentRequest(prompt, board);
 
+      // Apply note-based actions to Liveblocks storage
       applyAgentActions(reply.actions);
+
+      // Apply tldraw shape actions directly on the canvas
+      if (editor) {
+        for (const action of reply.actions) {
+          if (action.type === "create_shape") {
+            try {
+              const shapePartial: any = {
+                type: action.shapeType,
+                x: action.x,
+                y: action.y,
+                props: {},
+              };
+
+              if (action.shapeType === "text") {
+                // tldraw v4: text shape uses richText, not text
+                shapePartial.props.richText = toRichText(action.text ?? "");
+                if (action.color) shapePartial.props.color = action.color;
+              } else if (action.shapeType === "note") {
+                // tldraw v4: note shape also uses richText
+                shapePartial.props.richText = toRichText(action.text ?? "");
+                if (action.color) shapePartial.props.color = action.color;
+              } else if (action.shapeType === "geo") {
+                // geo uses plain text prop + dimensions
+                shapePartial.props.w = 240;
+                shapePartial.props.h = 140;
+                if (action.text) shapePartial.props.text = action.text;
+                if (action.color) shapePartial.props.color = action.color;
+              }
+
+              editor.createShapes([shapePartial]);
+            } catch (err) {
+              console.warn("create_shape failed", err);
+            }
+          }
+
+          if (action.type === "update_shape") {
+            try {
+              const existing = editor.getShape(action.id);
+              if (existing) {
+                const patch: any = { id: action.id, type: existing.type };
+                if (action.x !== undefined) patch.x = action.x;
+                if (action.y !== undefined) patch.y = action.y;
+                if (action.text !== undefined || action.color !== undefined) {
+                  patch.props = { ...(existing.props || {}) };
+                  if (action.text !== undefined) patch.props.text = action.text;
+                  if (action.color !== undefined) patch.props.color = action.color;
+                }
+                editor.updateShapes([patch]);
+              }
+            } catch (err) {
+              console.warn("update_shape failed", err);
+            }
+          }
+
+          if (action.type === "delete_shape") {
+            try {
+              editor.deleteShapes([action.id]);
+            } catch (err) {
+              console.warn("delete_shape failed", err);
+            }
+          }
+        }
+      }
+
       pushMessage("agent", oracleName, reply.reply);
 
-      if (reply.actions.length > 0) {
-        const suffix = reply.actions.length > 1 ? "s" : "";
-        pushMessage(
-          "system",
-          "System",
-          `Applied ${reply.actions.length} spatial action${suffix} from ${oracleName}.`,
-        );
+      const shapeCount = reply.actions.filter(a =>
+        a.type === "create_shape" || a.type === "update_shape" || a.type === "delete_shape"
+      ).length;
+      const noteCount = reply.actions.filter(a =>
+        a.type === "create_note" || a.type === "move_note" || a.type === "update_note" || a.type === "cluster_notes"
+      ).length;
+      const total = reply.actions.length;
+
+      if (total > 0) {
+        const parts = [];
+        if (shapeCount > 0) parts.push(`${shapeCount} canvas action${shapeCount > 1 ? "s" : ""}`);
+        if (noteCount > 0) parts.push(`${noteCount} note action${noteCount > 1 ? "s" : ""}`);
+        pushMessage("system", "System", `${oracleName} applied: ${parts.join(", ")}.`);
       }
     } catch (error) {
       const message =
@@ -325,6 +410,7 @@ function WhiteboardWorkspace({
           onCreateStarterNote={handleCreateStarterNote}
           others={othersForBoard}
           onDeleteNote={handleDeleteNote}
+          onEditorReady={setEditor}
         />
       </div>
 

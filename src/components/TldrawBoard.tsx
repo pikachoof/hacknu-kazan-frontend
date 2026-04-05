@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useMutation, useStorage } from "@liveblocks/react/suspense";
 import { Tldraw } from "tldraw";
@@ -14,6 +14,7 @@ type TldrawBoardProps = {
   onCreateStarterNote?: () => void;
   others?: any[];
   onDeleteNote?: (id: string) => void;
+  onEditorReady?: (editor: any) => void;
 };
 
 export function TldrawBoard({
@@ -25,10 +26,13 @@ export function TldrawBoard({
   onCreateStarterNote,
   others,
   onDeleteNote,
+  onEditorReady,
 }: TldrawBoardProps) {
   const editorRef = useRef<any>(null);
   const lastSavedDocRef = useRef<string>("");
   const hasLoadedDocRef = useRef(false);
+  const isLoadingRef = useRef(false); // blocks save during remote snapshot load
+  const [editorReady, setEditorReady] = useState(false);
 
   // Liveblocks storage for tldraw serialized project
   const storedDocValue = useStorage((root) => root.tldrawDoc);
@@ -38,6 +42,7 @@ export function TldrawBoard({
   }, []);
 
   useEffect(() => {
+    if (!editorReady) return;   // wait for editor to mount first
     const editor = editorRef.current;
     if (!editor) return;
 
@@ -60,6 +65,10 @@ export function TldrawBoard({
         ? editor.getCamera()
         : null;
 
+      // Block saveCurrentSnapshot while we load — avoids race condition
+      // where store.listen fires mid-load and overwrites the remote snapshot
+      isLoadingRef.current = true;
+
       // Load the document — this may reset camera as a side-effect
       editor.loadSnapshot(parsed);
 
@@ -68,16 +77,20 @@ export function TldrawBoard({
         editor.setCamera(savedCamera, { immediate: true });
       }
 
+      // Update ref BEFORE releasing the lock so the listener skip check is correct
       lastSavedDocRef.current = storedDoc;
+      isLoadingRef.current = false;
     } catch (err) {
+      isLoadingRef.current = false;
       console.warn("Could not load stored tldraw doc", err);
     } finally {
       hasLoadedDocRef.current = true;
     }
-  }, [saveDoc, storedDoc]);
+  }, [saveDoc, storedDoc, editorReady]);
 
   function saveCurrentSnapshot(editor: any) {
-    if (!hasLoadedDocRef.current) {
+    // Skip if not yet initialized OR if we are in the middle of loading a remote snapshot
+    if (!hasLoadedDocRef.current || isLoadingRef.current) {
       return;
     }
 
@@ -100,6 +113,8 @@ export function TldrawBoard({
   function attachEditorHooks(editor: any) {
     if (!editor) return;
     editorRef.current = editor;
+    onEditorReady?.(editor);
+    setEditorReady(true); // triggers useEffect re-run so storedDoc is loaded
 
     // Listen to document-scope changes only (excludes camera/pointer/selection)
     const unsubscribe = editor.store?.listen?.(() => {

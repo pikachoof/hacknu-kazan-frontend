@@ -58,7 +58,36 @@ export type AgentAction =
       x: number;
       y: number;
       color: NoteColor;
+    }
+  | {
+      type: "create_shape";
+      shapeType: "note" | "text" | "geo";
+      x: number;
+      y: number;
+      text?: string;
+      color?: string;
+    }
+  | {
+      type: "update_shape";
+      id: string;
+      x?: number;
+      y?: number;
+      text?: string;
+      color?: string;
+    }
+  | {
+      type: "delete_shape";
+      id: string;
     };
+
+export type BoardShape = {
+  id: string;
+  type: string;
+  x: number;
+  y: number;
+  text?: string;
+  color?: string;
+};
 
 export type BoardSnapshot = {
   notes: Array<
@@ -77,6 +106,7 @@ export type BoardSnapshot = {
       | "pinned"
     >
   >;
+  shapes: BoardShape[];
   prompt: string;
   roomId: string;
   mode: Presence["mode"];
