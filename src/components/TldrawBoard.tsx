@@ -54,9 +54,20 @@ export function TldrawBoard({
 
     try {
       const parsed = JSON.parse(storedDoc);
-      editor.loadSnapshot(parsed, {
-        forceOverwriteSessionState: true,
-      });
+
+      // Preserve this user's camera before loading remote changes
+      const savedCamera = hasLoadedDocRef.current
+        ? editor.getCamera()
+        : null;
+
+      // Load the document — this may reset camera as a side-effect
+      editor.loadSnapshot(parsed);
+
+      // Restore camera so this user's viewport stays independent
+      if (savedCamera !== null) {
+        editor.setCamera(savedCamera, { immediate: true });
+      }
+
       lastSavedDocRef.current = storedDoc;
     } catch (err) {
       console.warn("Could not load stored tldraw doc", err);
@@ -72,14 +83,15 @@ export function TldrawBoard({
 
     try {
       const snapshot = editor.getSnapshot();
-      const serialized = JSON.stringify(snapshot);
+      // Save ONLY the document part — never the session (camera/zoom/viewport)
+      const docOnly = JSON.stringify({ document: snapshot.document });
 
-      if (serialized === lastSavedDocRef.current) {
+      if (docOnly === lastSavedDocRef.current) {
         return;
       }
 
-      lastSavedDocRef.current = serialized;
-      void saveDoc(serialized);
+      lastSavedDocRef.current = docOnly;
+      void saveDoc(docOnly);
     } catch (err) {
       console.warn("Failed to save tldraw doc", err);
     }
@@ -89,9 +101,10 @@ export function TldrawBoard({
     if (!editor) return;
     editorRef.current = editor;
 
+    // Listen to document-scope changes only (excludes camera/pointer/selection)
     const unsubscribe = editor.store?.listen?.(() => {
       saveCurrentSnapshot(editor);
-    });
+    }, { scope: "document" });
 
     saveCurrentSnapshot(editor);
 

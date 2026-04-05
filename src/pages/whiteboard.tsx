@@ -58,28 +58,6 @@ export default function WhiteboardPage() {
           </div>
 
           <div className="hero-meta">
-            <form
-              className="field compact"
-              onSubmit={(event) => {
-                event.preventDefault();
-                const nextRoom = roomInput.trim() || defaultRoomId;
-                setRoomInput(nextRoom);
-                setRoomId(nextRoom);
-              }}
-            >
-              <span>Room</span>
-              <div className="row-grid">
-                <input
-                  value={roomInput}
-                  onChange={(event) => setRoomInput(event.target.value)}
-                  placeholder="team-session"
-                />
-                <button className="primary-button" type="submit">
-                  Join
-                </button>
-              </div>
-            </form>
-
             <div className="hero-stats">
               <div>
                 <strong>{roomId}</strong>
@@ -156,19 +134,16 @@ function WhiteboardWorkspace({
   }, [notes, selectedNoteId]);
 
   const createNote = useMutation(({ storage }, overrides: Partial<Note> = {}) => {
-    const list = storage.get("notes");
+    const list = storage.get("notes") as any;
     const note = createBlankNote(list.length, overrides);
     list.push(new LiveObject(note));
     return note.id;
   }, []);
 
   const moveNote = useMutation(({ storage }, noteId: string, x: number, y: number) => {
-    const list = storage.get("notes");
-    const target = list.find((item) => item.get("id") === noteId);
-    if (!target) {
-      return;
-    }
-
+    const list = storage.get("notes") as any;
+    const target = list.find((item: any) => item.get("id") === noteId);
+    if (!target) return;
     target.set("x", Math.round(x));
     target.set("y", Math.round(y));
   }, []);
@@ -179,16 +154,11 @@ function WhiteboardWorkspace({
       noteId: string,
       patch: Partial<Omit<Note, "id" | "createdBy">>,
     ) => {
-      const list = storage.get("notes");
-      const target = list.find((item) => item.get("id") === noteId);
-      if (!target) {
-        return;
-      }
-
+      const list = storage.get("notes") as any;
+      const target = list.find((item: any) => item.get("id") === noteId);
+      if (!target) return;
       Object.entries(patch).forEach(([key, value]) => {
-        if (value === undefined) {
-          return;
-        }
+        if (value === undefined) return;
         target.set(key as keyof Omit<Note, "id" | "createdBy">, value);
       });
     },
@@ -196,24 +166,20 @@ function WhiteboardWorkspace({
   );
 
   const deleteNote = useMutation(({ storage }, noteId: string) => {
-    if (!noteId) {
-      return;
-    }
-
-    const list = storage.get("notes");
-    const index = list.findIndex((item) => item.get("id") === noteId);
-    if (index >= 0) {
-      list.delete(index);
-    }
+    if (!noteId) return;
+    const list = storage.get("notes") as any;
+    const index = list.findIndex((item: any) => item.get("id") === noteId);
+    if (index >= 0) list.delete(index);
   }, []);
 
   const applyAgentActions = useMutation(({ storage }, actions: AgentAction[]) => {
-    const list = storage.get("notes");
-    const findNote = (id: string) => list.find((item) => item.get("id") === id);
+    const list = storage.get("notes") as any;
+    if (!list) return;
+    const findNote = (id: string) => list.find((item: any) => item.get("id") === id);
 
     for (const action of actions) {
       if (action.type === "create_note") {
-        const exists = list.some((item) => item.get("id") === action.note.id);
+        const exists = list.some((item: any) => item.get("id") === action.note.id);
         list.push(
           new LiveObject({
             ...action.note,
@@ -237,9 +203,7 @@ function WhiteboardWorkspace({
         const target = findNote(action.id);
         if (target) {
           Object.entries(action.patch).forEach(([key, value]) => {
-            if (value === undefined) {
-              return;
-            }
+            if (value === undefined) return;
             target.set(key as keyof Omit<Note, "id" | "createdBy">, value);
           });
         }
@@ -249,10 +213,7 @@ function WhiteboardWorkspace({
       if (action.type === "cluster_notes") {
         action.ids.forEach((noteId, index) => {
           const target = findNote(noteId);
-          if (!target) {
-            return;
-          }
-
+          if (!target) return;
           target.set("x", action.x + (index % 2) * 290);
           target.set("y", action.y + Math.floor(index / 2) * 210);
           target.set("color", action.color);
@@ -504,29 +465,24 @@ function MissingConfig() {
 }
 
 function formatConnectionStatus(status: string): string {
-  if (status === "connected") {
-    return "Connected";
-  }
-  if (status === "connecting" || status === "initial") {
-    return "Connecting";
-  }
-  if (status === "reconnecting") {
-    return "Reconnecting";
-  }
+  if (status === "connected") return "Connected";
+  if (status === "connecting" || status === "initial") return "Connecting";
+  if (status === "reconnecting") return "Reconnecting";
   return "Offline";
 }
 
 function makeHumanName() {
-  const names = ["Maya", "Jun", "Rafi", "Nina", "Sol", "Ada"];
-
-  return (
-    import.meta.env.VITE_USER_NAME ??
-    names[Math.floor(Math.random() * names.length)]
-  );
+  const animals = [
+    "Олень", "Барсук", "Енот", "Лис",
+    "Пингвин", "Осьминог", "Ежик", "Лемур",
+    "Жираф", "Альпака", "Хомяк", "Сурикат"
+  ];
+  const randomAnimal = animals[Math.floor(Math.random() * animals.length)];
+  const randomId = Math.floor(1000 + Math.random() * 9000);
+  return `Неопознанный ${randomAnimal}-${randomId}`;
 }
 
 function pickColor() {
   const colors = ["#9d5d2f", "#2d8a7e", "#c95c4b", "#4c72b8", "#708f59"];
-
   return colors[Math.floor(Math.random() * colors.length)];
 }

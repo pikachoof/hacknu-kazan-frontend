@@ -221,33 +221,15 @@ function normalizeAction(action: unknown, board: BoardSnapshot): AgentAction[] {
 function sanitizePatch(patch: Record<string, unknown>): Partial<Note> {
   const result: Partial<Note> = {};
 
-  if (typeof patch.title === "string") {
-    result.title = patch.title;
-  }
-  if (typeof patch.body === "string") {
-    result.body = patch.body;
-  }
-  if (typeof patch.x === "number") {
-    result.x = patch.x;
-  }
-  if (typeof patch.y === "number") {
-    result.y = patch.y;
-  }
-  if (typeof patch.width === "number") {
-    result.width = patch.width;
-  }
-  if (typeof patch.height === "number") {
-    result.height = patch.height;
-  }
-  if (isNoteColor(patch.color)) {
-    result.color = patch.color;
-  }
-  if (isNoteKind(patch.kind)) {
-    result.kind = patch.kind;
-  }
-  if (typeof patch.pinned === "boolean") {
-    result.pinned = patch.pinned;
-  }
+  if (typeof patch.title === "string") result.title = patch.title;
+  if (typeof patch.body === "string") result.body = patch.body;
+  if (typeof patch.x === "number") result.x = patch.x;
+  if (typeof patch.y === "number") result.y = patch.y;
+  if (typeof patch.width === "number") result.width = patch.width;
+  if (typeof patch.height === "number") result.height = patch.height;
+  if (isNoteColor(patch.color)) result.color = patch.color;
+  if (isNoteKind(patch.kind)) result.kind = patch.kind;
+  if (typeof patch.pinned === "boolean") result.pinned = patch.pinned;
 
   return result;
 }

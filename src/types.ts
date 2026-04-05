@@ -86,3 +86,10 @@ export type AgentReply = {
   reply: string;
   actions: AgentAction[];
 };
+
+export type FunctionCall = {
+  name: string;
+  args?: Record<string, unknown>;
+};
+
+export type AgentActionExtended = AgentAction | { type: "function_calls"; calls: FunctionCall[] };

@@ -14,7 +14,6 @@
     "@anthropic-ai/sdk": "*",
     "@liveblocks/client": "*",
     "@liveblocks/react": "*",
-    "@tldraw/tldraw": "^4.5.7",
     "concurrently": "*",
     "cors": "*",
     "dotenv": "*",
@@ -24,7 +23,8 @@
     "react-dom": "*",
     "react-konva": "*",
     "react-router-dom": "*",
-    "router-dom": "^3.0.3"
+    "router-dom": "^3.0.3",
+    "tldraw": "^4.5.7"
   },
   "devDependencies": {
     "@types/cors": "*",
